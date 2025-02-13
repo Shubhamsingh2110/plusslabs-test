@@ -74,8 +74,17 @@ const Login = () => {
     e.preventDefault();
     setError(null);
 
+    // try {
+    //   const res = await axios.post("http://localhost:3000/api/auth/login", formData);
+    //   localStorage.setItem("token", res.data.token);
+    //   alert("Login Successful!");
+    //   navigate("/dashboard");
+    // } catch (err) {
+    //   setError(err.response?.data?.msg || "Login failed");
+    // }
+
     try {
-      const res = await axios.post("http://localhost:3000/api/auth/login", formData);
+      const res = await axios.post(API_BASE_URL, formData);
       localStorage.setItem("token", res.data.token);
       alert("Login Successful!");
       navigate("/dashboard");
