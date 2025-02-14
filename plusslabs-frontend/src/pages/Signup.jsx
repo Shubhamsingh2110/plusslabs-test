@@ -70,6 +70,8 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+import { API_BASE_URL } from "../config";
+
 const Signup = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState(null);
@@ -99,6 +101,7 @@ const Signup = () => {
       navigate("/dashboard");
     } catch (err) {
       setError(err.response?.data?.msg || "Signup failed");
+      console.log('Error signing up:', error);
     }
   };
 
