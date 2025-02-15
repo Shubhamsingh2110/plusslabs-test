@@ -88,7 +88,7 @@ const Login = () => {
       const res = await axios.post(API_BASE_URLL, formData);
       localStorage.setItem("token", res.data.token);
       alert("Login Successful!");
-      navigate("/dashboard");
+      navigate("/home");
     } catch (err) {
       setError(err.response?.data?.msg || "Login failed");
     }
