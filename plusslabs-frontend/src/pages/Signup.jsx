@@ -1,57 +1,85 @@
 import { useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-import { API_BASE_URL } from "../config";
+import { GoogleLogin } from '@react-oauth/google';
+import axios from "axios";
 
 const Signup = () => {
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
-  const [error, setError] = useState(null);
+  const [data, setData] = useState({ firstName: "", lastName: "", email: "", password: "" });
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setData({ ...data, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
-
-    // try {
-    //   const res = await axios.post("http://localhost:3000/api/auth/signup", formData);
-    //   localStorage.setItem("token", res.data.token);
-    //   alert("Signup Successful!");
-    //   navigate("/dashboard");
-    // } catch (err) {
-    //   setError(err.response?.data?.msg || "Signup failed");
-    // }
-
     try {
-      const res = await axios.post(API_BASE_URL, formData);
-      localStorage.setItem("token", res.data.token);
-      alert("Signup Successful!");
-      navigate("/home");
-    } catch (err) {
-      setError(err.response?.data?.msg || "Signup failed");
-      console.log('Error signing up:', error);
+      setError("");
+      const response = await axios.post("http://localhost:3000/api/users", data);
+      console.log("Signup successful:", response.data);
+      
+      // After successful signup, automatically login
+      const loginResponse = await axios.post("http://localhost:3000/api/auth", {
+        email: data.email,
+        password: data.password
+      });
+
+      localStorage.setItem("user", JSON.stringify({
+        token: loginResponse.data.data,
+        role: loginResponse.data.role
+      }));
+
+      navigate("/"); // Redirect to home page
+    } catch (error) {
+      setError(error.response?.data?.message || "Signup failed");
+      console.error("Signup error:", error.response?.data);
+    }
+  };
+
+  const handleGoogleSuccess = async (credentialResponse) => {
+    try {
+      const res = await axios.post("http://localhost:3000/api/auth/google", {
+        credential: credentialResponse.credential,
+        isSignup: true
+      });
+      // After Google signup, automatically log them in
+      localStorage.setItem("user", JSON.stringify({
+        token: res.data.token,
+        ...res.data.user
+      }));
+      navigate("/"); // Redirect to home page
+    } catch (error) {
+      console.error("Google signup failed:", error.response?.data?.message);
     }
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-6 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold text-center mb-4">Sign Up</h2>
-        {error && <p className="text-red-500 text-sm">{error}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input type="text" name="name" placeholder="Name" onChange={handleChange} required className="w-full p-2 border rounded-md" />
-          <input type="email" name="email" placeholder="Email" onChange={handleChange} required className="w-full p-2 border rounded-md" />
-          <input type="password" name="password" placeholder="Password" onChange={handleChange} required className="w-full p-2 border rounded-md" />
-          <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600">Sign Up</button>
-        </form>
-        <p className="text-sm text-center mt-4">
-          Already have an account? <a href="/login" className="text-blue-500">Login</a>
-        </p>
-      </div>
+    <div className="flex justify-center items-center h-screen">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-lg w-96">
+        <h1 className="text-xl font-bold mb-4">Create Account</h1>
+        {error && <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-4">{error}</div>}
+        <input className="border p-2 w-full mb-3" type="text" name="firstName" placeholder="First Name" onChange={handleChange} required />
+        <input className="border p-2 w-full mb-3" type="text" name="lastName" placeholder="Last Name" onChange={handleChange} required />
+        <input className="border p-2 w-full mb-3" type="email" name="email" placeholder="Email" onChange={handleChange} required />
+        <input className="border p-2 w-full mb-3" type="password" name="password" placeholder="Password" onChange={handleChange} required />
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-md w-full mb-4">Sign Up</button>
+        
+        <div className="relative flex py-4">
+          <div className="flex-grow border-t border-gray-300"></div>
+          <span className="flex-shrink mx-4 text-gray-400">or</span>
+          <div className="flex-grow border-t border-gray-300"></div>
+        </div>
+
+        <div className="flex justify-center">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => console.error("Google Sign Up was unsuccessful")}
+            theme="outline"
+            size="large"
+            text="signup_with"
+            shape="rectangular"
+          />
+        </div>
+      </form>
     </div>
   );
 };
